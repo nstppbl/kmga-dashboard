@@ -1,0 +1,26 @@
+name: Update Dashboard
+on:
+  push:
+    paths:
+      - 'data.json' # Скрипт сработает только при обновлении данных
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install pandas plotly
+      - name: Run script
+        run: python script.py
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "action@github.com"
+          git add index.html
+          git commit -m "Auto-update dashboard"
+          git push
