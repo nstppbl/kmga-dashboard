@@ -2,16 +2,17 @@ name: Update Dashboard
 on:
   push:
     paths:
-      - 'data.json' # Запуск при обновлении данных
-  workflow_dispatch: # Позволяет запускать вручную или через API (n8n)
+      - 'data.json'
+      - 'script.py'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3 # Обновили версию
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - name: Install dependencies
@@ -22,7 +23,10 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "action@github.com"
-          git pull --rebase origin master # ЗАБИРАЕМ ИЗМЕНЕНИЯ ОТ n8n ПЕРЕД ПУШЕМ
           git add index.html
-          git commit -m "Auto-update dashboard" || echo "No changes to commit"
+          git stash # Временно прячем изменения, чтобы pull прошел гладко
+          git pull --rebase origin master
+          git stash pop # Возвращаем наш новый index.html
+          git add index.html
+          git commit -m "Auto-update dashboard: $(date)" || echo "No changes to commit"
           git push origin master
