@@ -4,46 +4,62 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import json
 
-# 1. Загрузка данных
+# 1. Загрузка и подготовка данных
 with open('data.json', 'r', encoding='utf-8') as f:
-    raw_json = json.load(f)
-df = pd.DataFrame(raw_json['data'])
+    raw = json.load(f)
+df = pd.DataFrame(raw['data'])
 
-# 2. Группировка для итоговой аналитики
-df_grouped = df.groupby(['Project_No', 'Employee', 'Project_Description'])['Hours'].sum().reset_index()
-# Сортируем проекты по общему количеству часов
-df_grouped = df_grouped.sort_values(by='Hours', ascending=False)
+# Группируем данные, чтобы не было "каши"
+df_res = df.groupby(['Project_No', 'Project_Description', 'Employee'])['Hours'].sum().reset_index()
 
-# 3. Создаем дашборд
+# 2. Создаем макет: Сверху общая загрузка, снизу детализация по задачам
 fig = make_subplots(
     rows=2, cols=1,
-    subplot_titles=("Загрузка инженеров по проектам (Stacked)", "Общее распределение времени"),
-    vertical_spacing=0.2,
+    subplot_titles=("<b>Распределение ресурсов по проектам</b>", "<b>Структура трудозатрат отдела (%)</b>"),
+    vertical_spacing=0.15,
     specs=[[{"type": "bar"}], [{"type": "pie"}]]
 )
 
-# Добавляем Stacked Bar (один столбик - один проект, внутри - люди)
-for employee in df_grouped['Employee'].unique():
-    temp = df_grouped[df_grouped['Employee'] == employee]
+# --- ГРАФИК 1: Stacked Bar (Информативный) ---
+# Мы объединяем номер и описание проекта для оси X
+df_res['Label'] = df_res['Project_No'] + "<br>" + df_res['Project_Description'].str[:20] + "..."
+
+for emp in df_res['Employee'].unique():
+    temp = df_res[df_res['Employee'] == emp]
     fig.add_trace(
-        go.Bar(x=temp['Project_No'], y=temp['Hours'], name=employee, 
-               text=temp['Hours'], textposition='auto'),
+        go.Bar(
+            x=temp['Label'], 
+            y=temp['Hours'], 
+            name=emp,
+            text=temp['Hours'],
+            textposition='auto',
+            hovertemplate="<b>%{x}</b><br>Сотрудник: " + emp + "<br>Часов: %{y}<extra></extra>"
+        ),
         row=1, col=1
     )
 
-# Добавляем Pie Chart
-proj_total = df_grouped.groupby('Project_Description')['Hours'].sum().reset_index()
+# --- ГРАФИК 2: Donut Chart (Общая картина) ---
+proj_totals = df.groupby('Project_Description')['Hours'].sum().reset_index()
 fig.add_trace(
-    go.Pie(labels=proj_total['Project_Description'], values=proj_total['Hours'], hole=.3),
+    go.Pie(
+        labels=proj_totals['Project_Description'], 
+        values=proj_totals['Hours'], 
+        hole=.4,
+        legendgroup="projects",
+        legendgrouptitle_text="Проекты:"
+    ),
     row=2, col=1
 )
 
-# Оформление
+# 3. Настройка оформления (Best Practices)
 fig.update_layout(
-    height=1000, 
-    barmode='stack', 
-    title_text="KMGA Dashboard: Аналитика ресурсов",
-    template="plotly_white"
+    height=1000,
+    barmode='stack',
+    title_text="<b>KMGA Resource Management Dashboard</b>",
+    template="plotly_white",
+    legend_tracegroupgap=20,
+    showlegend=True
 )
 
+# Для теста в Colab: fig.show()
 fig.write_html('index.html')
