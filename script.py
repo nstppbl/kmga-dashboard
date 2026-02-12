@@ -3,23 +3,13 @@ import plotly.express as px
 import json
 import os
 
-# 1. Читаем данные, которые прислал n8n
+# 1. Читаем данные из JSON
 with open('data.json', 'r', encoding='utf-8') as f:
-    raw_data = json.load(f)
+    raw_json = json.load(f)
 
-# 2. Превращаем в таблицу (учитываем структуру n8n)
-# Если ты использовал Aggregate, данные могут быть вложены
-# 2. Превращаем в таблицу (правильно вытаскиваем данные из структуры n8n)
-df = pd.DataFrame([item['json'] for item in raw_data])
+# 2. Вытаскиваем список из ключа 'data'
+df = pd.DataFrame(raw_json['data']) 
 
-# 3. Строим интерактивный график загрузки по проектам
-fig = px.bar(df, 
-             x='Project_No', 
-             y='Hours', 
-             color='Employee',
-             title='Трудозатраты отдела по проектам (KMGA)',
-             hover_data=['Project_Description', 'Staff_Comment'],
-             barmode='group')
-
-# 4. Сохраняем результат в HTML-файл для GitHub Pages
+# 3. Строим график (остальное без изменений)
+fig = px.bar(df, x='Project_No', y='Hours', color='Employee', barmode='group')
 fig.write_html('index.html')
