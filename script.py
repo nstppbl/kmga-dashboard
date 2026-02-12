@@ -9,7 +9,8 @@ with open('data.json', 'r', encoding='utf-8') as f:
 
 # 2. Превращаем в таблицу (учитываем структуру n8n)
 # Если ты использовал Aggregate, данные могут быть вложены
-df = pd.DataFrame([item for item in raw_data])
+# 2. Превращаем в таблицу (правильно вытаскиваем данные из структуры n8n)
+df = pd.DataFrame([item['json'] for item in raw_data])
 
 # 3. Строим интерактивный график загрузки по проектам
 fig = px.bar(df, 
