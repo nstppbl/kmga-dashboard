@@ -2,7 +2,8 @@ name: Update Dashboard
 on:
   push:
     paths:
-      - 'data.json' # Скрипт сработает только при обновлении данных
+      - 'data.json' # Запуск при обновлении данных
+  workflow_dispatch: # Позволяет запускать вручную или через API (n8n)
 jobs:
   build:
     runs-on: ubuntu-latest
