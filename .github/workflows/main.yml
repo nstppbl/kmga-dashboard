@@ -10,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3 # Обновили версию
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Загружаем всю историю для корректной работы git
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -19,14 +21,11 @@ jobs:
         run: pip install pandas plotly
       - name: Run script
         run: python script.py
-      - name: Commit and push changes
+      - name: Force Update Dashboard
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "action@github.com"
           git add index.html
-          git stash # Временно прячем изменения, чтобы pull прошел гладко
-          git pull --rebase origin master
-          git stash pop # Возвращаем наш новый index.html
-          git add index.html
-          git commit -m "Auto-update dashboard: $(date)" || echo "No changes to commit"
-          git push origin master
+          # Делаем "мягкий" коммит и принудительно затираем мастер
+          git commit --amend -m "Update Dashboard: $(date)" || git commit -m "Update Dashboard: $(date)"
+          git push origin master --force
