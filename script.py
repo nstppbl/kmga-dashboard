@@ -9,50 +9,42 @@ with open('data.json', 'r', encoding='utf-8') as f:
     raw = json.load(f)
 df = pd.DataFrame(raw['data'])
 
-# 2. Подготовка аналитики
-# Склеиваем номер и описание для информативности
-df['Project_Label'] = df['Project_No'] + "<br><i>" + df['Project_Description'].str.wrap(25).str.replace('\n', '<br>') + "</i>"
-
-# Группируем для графиков
-df_res = df.groupby(['Project_Label', 'Employee'])['Hours'].sum().reset_index()
+# 2. Улучшенная маркировка проектов
+# Делаем короткое и понятное имя для оси X
+df['Project_Name'] = df['Project_No'] + "<br>" + df['Project_Description'].str[:20] + "..."
 
 # 3. Создаем дашборд
 fig = make_subplots(
     rows=2, cols=1,
-    subplot_titles=("<b>Загрузка по проектам (часы по сотрудникам)</b>", "<b>Общая доля проектов в отделе</b>"),
-    vertical_spacing=0.2,
+    subplot_titles=("<b>Затраты времени по сотрудникам (Hours)</b>", "<b>Общее распределение по проектам (%)</b>"),
+    vertical_spacing=0.15,
     specs=[[{"type": "bar"}], [{"type": "pie"}]]
 )
 
-# График 1: Накопительные столбцы (Stacked Bar)
-for emp in df_res['Employee'].unique():
-    temp = df_res[df_res['Employee'] == emp]
+# График 1: Накопительные столбцы (один проект - один столбик)
+for emp in df['Employee'].unique():
+    temp = df[df['Employee'] == emp].groupby('Project_Name')['Hours'].sum().reset_index()
     fig.add_trace(
-        go.Bar(x=temp['Project_Label'], y=temp['Hours'], name=emp, 
-               text=temp['Hours'], textposition='inside'),
+        go.Bar(x=temp['Project_Name'], y=temp['Hours'], name=emp, 
+               text=temp['Hours'], textposition='auto'),
         row=1, col=1
     )
 
-# График 2: Круговая диаграмма проектов
-proj_totals = df.groupby('Project_Description')['Hours'].sum().reset_index()
+# График 2: Круговая диаграмма (Donut)
+proj_sum = df.groupby('Project_Description')['Hours'].sum().reset_index()
 fig.add_trace(
-    go.Pie(labels=proj_totals['Project_Description'], values=proj_totals['Hours'], hole=.4),
+    go.Pie(labels=proj_sum['Project_Description'], values=proj_sum['Hours'], hole=.4),
     row=2, col=1
 )
 
-# 4. Стилизация
+# Оформление для руководства
 fig.update_layout(
-    height=1200, barmode='stack', 
-    title_text="<b>KMGA Resource Management Dashboard</b>",
-    template="plotly_white"
+    height=1000,
+    barmode='stack', # Сотрудники один над другим
+    title_text="<b>KMGA: Оперативная аналитика ресурсов</b>",
+    template="plotly_white",
+    showlegend=True
 )
 
-# 5. Генерация финального HTML с таблицей
-# Добавляем таблицу комментариев в конец страницы
-table_html = df[['Employee', 'Project_No', 'Staff_Comment', 'Hours']].to_html(classes='table', index=False)
-
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write('<html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"></head><body>')
-    f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-    f.write(f'<div class="container"><h3>Детализация задач:</h3>{table_html}</div>')
-    f.write('</body></html>')
+# Генерируем HTML
+fig.write_html('index.html')
