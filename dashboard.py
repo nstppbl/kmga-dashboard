@@ -12,52 +12,96 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Минималистичная CSS стилизация
+# Современный CSS стилизация
 st.markdown("""
 <style>
-    /* Минималистичная цветовая схема */
+    /* Чистый современный дизайн */
     .main {
-        background-color: #f8f9fa;
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     }
+    
+    /* Стильные KPI карточки */
     .stMetric {
-        background-color: #ffffff;
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
     }
+    
+    .stMetric:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    
     .stMetric label {
         color: #6c757d;
-        font-size: 0.85rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
+    
     .stMetric [data-testid="stMetricValue"] {
         color: #212529;
-        font-size: 1.5rem;
-        font-weight: 600;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
     }
+    
     .stMetric [data-testid="stMetricDelta"] {
-        color: #495057;
-        font-size: 0.75rem;
+        color: #28a745;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.25rem;
     }
+    
+    /* Заголовки */
     h1, h2, h3 {
         color: #212529;
-        font-weight: 600;
+        font-weight: 700;
+        margin-bottom: 1rem;
     }
+    
+    /* Sidebar */
     .stSidebar {
-        background-color: #ffffff;
+        background: #ffffff;
+        border-right: 1px solid #e9ecef;
     }
-    .stSelectbox label, .stRadio label {
+    
+    .stSelectbox label, .stRadio label, .stCheckbox label {
         color: #495057;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
-    .stDataFrame {
-        font-size: 0.85rem;
+    
+    /* Улучшенные элементы формы */
+    .stSelectbox > div > div {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
     }
-    /* Скрываем некоторые элементы Streamlit по умолчанию */
+    
+    .stRadio > div {
+        gap: 0.5rem;
+    }
+    
+    /* Скрываем элементы Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Улучшаем таблицы */
+    .stDataFrame {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Убираем предупреждения по умолчанию */
+    .stAlert {
+        display: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -81,7 +125,6 @@ def load_data():
     df['Project_Description'] = df['Project_Description'].str.strip()
     
     # Исправленная агрегация: убираем дубликаты перед группировкой
-    # Группируем по уникальной комбинации всех полей и суммируем часы
     df_aggregated = df.groupby([
         'Employee', 
         'Project_No', 
@@ -89,11 +132,6 @@ def load_data():
         'Activity', 
         'Project_Description'
     ])['Hours'].sum().reset_index()
-    
-    # Проверка на дубликаты (для отладки)
-    duplicates = df_aggregated.duplicated(subset=['Employee', 'Project_No']).sum()
-    if duplicates > 0:
-        st.warning(f"⚠️ Найдено {duplicates} потенциальных дубликатов")
     
     # Создаем метки проектов
     df_aggregated['Project_Label'] = df_aggregated['Client'] + ' - ' + df_aggregated['Project_No']
@@ -108,12 +146,24 @@ def load_data():
 # Загрузка данных
 df = load_data()
 
-# Минималистичный заголовок
-st.markdown("### KMGA Analytics Dashboard")
-st.caption("Оперативная аналитика ресурсов")
+# Красивый заголовок
+st.markdown("""
+<div style='text-align: center; padding: 2rem 0 1rem 0;'>
+    <h1 style='color: #212529; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;'>
+        KMGA Analytics Dashboard
+    </h1>
+    <p style='color: #6c757d; font-size: 1.1rem; font-weight: 400;'>
+        Оперативная аналитика ресурсов
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
-# Sidebar с минималистичными фильтрами
-st.sidebar.markdown("### Фильтры")
+# Sidebar с фильтрами
+st.sidebar.markdown("""
+<div style='padding: 1rem 0; border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem;'>
+    <h3 style='color: #212529; font-size: 1.2rem; font-weight: 700; margin: 0;'>Фильтры</h3>
+</div>
+""", unsafe_allow_html=True)
 
 # Получаем уникальные значения
 unique_projects = sorted(df['Project_No'].unique().tolist())
@@ -121,29 +171,33 @@ unique_employees = sorted(df['Employee'].unique().tolist())
 
 # Фильтры в sidebar
 selected_project = st.sidebar.selectbox(
-    "Проект",
+    "📁 Проект",
     options=['Все проекты'] + unique_projects,
     index=0,
     label_visibility="visible"
 )
 
 selected_employee = st.sidebar.selectbox(
-    "Сотрудник",
+    "👤 Сотрудник",
     options=['Все сотрудники'] + unique_employees,
     index=0,
     label_visibility="visible"
 )
 
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+
 chart_type = st.sidebar.radio(
-    "Тип графика",
+    "📊 Тип графика",
     options=['Bar Chart', 'Pie Chart', 'Line Chart', 'Heatmap', 'Treemap'],
-    index=0,
+    index=1,
     label_visibility="visible"
 )
 
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+
 # Дополнительные опции
-show_tables = st.sidebar.checkbox("Показать таблицы", value=False)
-export_data = st.sidebar.checkbox("Экспорт данных", value=False)
+show_tables = st.sidebar.checkbox("📋 Показать таблицы", value=False)
+export_data = st.sidebar.checkbox("💾 Экспорт данных", value=False)
 
 # Фильтрация данных
 filtered_df = df.copy()
@@ -172,67 +226,91 @@ else:
 # Средняя загрузка
 avg_hours_per_employee = filtered_df.groupby('Employee')['Hours'].sum().mean() if active_employees > 0 else 0
 
-# Компактные KPI Cards в одну строку
+# Стильные KPI Cards
 st.markdown("<br>", unsafe_allow_html=True)
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.metric(
-        label="Общие часы",
+        label="⏱️ Общие часы",
         value=f"{total_hours:,.0f}"
     )
 
 with col2:
     st.metric(
-        label="Проектов",
+        label="📁 Проектов",
         value=active_projects
     )
 
 with col3:
     st.metric(
-        label="Сотрудников",
+        label="👥 Сотрудников",
         value=active_employees
     )
 
 with col4:
     st.metric(
-        label="Топ проект",
+        label="🏆 Топ проект",
         value=top_project,
         delta=f"{top_project_hours:,.0f} ч"
     )
 
 with col5:
     st.metric(
-        label="Средняя загрузка",
+        label="📊 Средняя загрузка",
         value=f"{avg_hours_per_employee:.1f}",
         delta="ч/сотрудник"
     )
 
-st.divider()
+st.markdown("<br>", unsafe_allow_html=True)
 
-# Основной график с минималистичным дизайном
-st.markdown("### Основная визуализация")
+# Основной график с современным дизайном
+st.markdown("""
+<div style='padding: 1rem 0;'>
+    <h2 style='color: #212529; font-size: 1.5rem; font-weight: 700; margin: 0;'>Основная визуализация</h2>
+</div>
+""", unsafe_allow_html=True)
 
-# Приглушенная цветовая палитра (серые и синие тона)
-minimal_colors = ['#6c757d', '#495057', '#868e96', '#adb5bd', '#ced4da', '#343a40', 
-                  '#007bff', '#0056b3', '#004085', '#003d82']
+# Современная цветовая палитра (приглушенные, но красивые цвета)
+modern_colors = [
+    '#4A90E2',  # Синий
+    '#50C878',  # Зеленый
+    '#FF6B6B',  # Красный
+    '#FFA500',  # Оранжевый
+    '#9B59B6',  # Фиолетовый
+    '#1ABC9C',  # Бирюзовый
+    '#E74C3C',  # Коралловый
+    '#3498DB',  # Голубой
+    '#F39C12',  # Желтый
+    '#16A085',  # Изумрудный
+    '#E67E22',  # Морковный
+    '#95A5A6',  # Серый
+    '#34495E',  # Темно-серый
+    '#2ECC71',  # Светло-зеленый
+    '#8E44AD',  # Темно-фиолетовый
+    '#C0392B',  # Темно-красный
+    '#D35400'   # Темно-оранжевый
+]
+
+# Градиентная палитра для pie chart
+pie_colors = px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
 
 if chart_type == 'Bar Chart':
     # Stacked Bar Chart
     fig = go.Figure()
     
-    # Группируем данные правильно
-    for emp in sorted(filtered_df['Employee'].unique()):
+    employees = sorted(filtered_df['Employee'].unique())
+    for i, emp in enumerate(employees):
         emp_data = filtered_df[filtered_df['Employee'] == emp]
         temp = emp_data.groupby(['Project_No', 'Project_Label'])['Hours'].sum().reset_index()
         fig.add_trace(go.Bar(
             x=temp['Project_Label'],
             y=temp['Hours'],
             name=emp,
-            marker_color=minimal_colors[len(fig.data) % len(minimal_colors)],
+            marker_color=modern_colors[i % len(modern_colors)],
             text=[f'{h:,.0f}' for h in temp['Hours']],
             textposition='outside',
-            textfont=dict(size=9, color='#495057'),
+            textfont=dict(size=10, color='#495057'),
             hovertemplate='<b>%{fullData.name}</b><br>Проект: %{x}<br>Часы: %{y:,.0f}<extra></extra>'
         ))
     
@@ -242,7 +320,7 @@ if chart_type == 'Bar Chart':
         yaxis_title="Часы",
         barmode='stack',
         template='plotly_white',
-        height=600,
+        height=650,
         showlegend=True,
         legend=dict(
             orientation="v",
@@ -251,67 +329,86 @@ if chart_type == 'Bar Chart':
             xanchor="left",
             x=1.02,
             font=dict(size=10, color='#495057'),
-            bgcolor='rgba(255,255,255,0.8)',
+            bgcolor='rgba(255,255,255,0.95)',
             bordercolor='#e9ecef',
             borderwidth=1
         ),
         xaxis=dict(
             categoryorder='total descending',
-            tickfont=dict(size=9, color='#6c757d'),
+            tickfont=dict(size=10, color='#6c757d'),
             gridcolor='#f1f3f5',
-            linecolor='#dee2e6'
+            linecolor='#dee2e6',
+            showgrid=True
         ),
         yaxis=dict(
-            tickfont=dict(size=9, color='#6c757d'),
+            tickfont=dict(size=10, color='#6c757d'),
             gridcolor='#f1f3f5',
-            linecolor='#dee2e6'
+            linecolor='#dee2e6',
+            showgrid=True
         ),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=50, r=200, t=20, b=100)
+        margin=dict(l=60, r=220, t=30, b=120)
     )
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 elif chart_type == 'Pie Chart':
-    # Pie Chart (Donut)
+    # Pie Chart (Donut) с улучшенным дизайном
     proj_sum = filtered_df.groupby(['Project_No', 'Project_Label'])['Hours'].sum().reset_index()
     proj_sum = proj_sum.sort_values('Hours', ascending=False)
+    
+    # Группируем маленькие проекты в "Другие"
+    if len(proj_sum) > 10:
+        top_10 = proj_sum.head(10)
+        others = proj_sum.tail(len(proj_sum) - 10)
+        others_sum = others['Hours'].sum()
+        if others_sum > 0:
+            top_10 = pd.concat([top_10, pd.DataFrame([{
+                'Project_No': 'OTHER',
+                'Project_Label': 'Другие проекты',
+                'Hours': others_sum
+            }])], ignore_index=True)
+        proj_sum = top_10
     
     fig = go.Figure(data=[go.Pie(
         labels=proj_sum['Project_Label'],
         values=proj_sum['Hours'],
-        hole=0.4,
-        textinfo='percent',
+        hole=0.5,
+        textinfo='percent+label',
         textposition='outside',
-        textfont=dict(size=9, color='#495057'),
-        marker=dict(colors=minimal_colors[:len(proj_sum)]),
-        hovertemplate='<b>%{label}</b><br>Часы: %{value:,.0f}<br>Доля: %{percent}<extra></extra>'
+        textfont=dict(size=11, color='#495057'),
+        marker=dict(
+            colors=pie_colors[:len(proj_sum)],
+            line=dict(color='#ffffff', width=2)
+        ),
+        hovertemplate='<b>%{label}</b><br>Часы: %{value:,.0f}<br>Доля: %{percent}<extra></extra>',
+        rotation=90
     )])
     
     fig.update_layout(
         title="",
         template='plotly_white',
-        height=500,
+        height=600,
         showlegend=True,
         legend=dict(
             orientation="v",
             yanchor="middle",
             y=0.5,
             xanchor="left",
-            x=1.1,
-            font=dict(size=9, color='#495057'),
-            bgcolor='rgba(255,255,255,0.8)',
+            x=1.15,
+            font=dict(size=10, color='#495057'),
+            bgcolor='rgba(255,255,255,0.95)',
             bordercolor='#e9ecef',
             borderwidth=1
         ),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=50, r=250, t=20, b=50)
+        margin=dict(l=50, r=280, t=30, b=50)
     )
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 elif chart_type == 'Line Chart':
-    # Line Chart
+    # Line Chart с градиентом
     project_hours_df = filtered_df.groupby(['Project_No', 'Project_Label'])['Hours'].sum().reset_index()
     project_hours_sorted = project_hours_df.sort_values('Hours', ascending=False)
     
@@ -321,13 +418,13 @@ elif chart_type == 'Line Chart':
         y=project_hours_sorted['Hours'],
         mode='lines+markers',
         name='Часы',
-        line=dict(width=2, color='#6c757d', shape='spline'),
-        marker=dict(size=8, color='#495057', line=dict(width=1, color='white')),
+        line=dict(width=3, color='#4A90E2', shape='spline'),
+        marker=dict(size=10, color='#4A90E2', line=dict(width=2, color='white')),
         fill='tonexty',
-        fillcolor='rgba(108, 117, 125, 0.1)',
+        fillcolor='rgba(74, 144, 226, 0.15)',
         text=[f'{h:,.0f}' for h in project_hours_sorted['Hours']],
         textposition='top center',
-        textfont=dict(size=8, color='#495057'),
+        textfont=dict(size=9, color='#495057'),
         hovertemplate='<b>Проект:</b> %{x}<br><b>Часы:</b> %{y:,.0f}<extra></extra>'
     ))
     
@@ -336,27 +433,29 @@ elif chart_type == 'Line Chart':
         xaxis_title="",
         yaxis_title="Часы",
         template='plotly_white',
-        height=500,
+        height=550,
         xaxis=dict(
             tickangle=-45,
-            tickfont=dict(size=9, color='#6c757d'),
+            tickfont=dict(size=10, color='#6c757d'),
             gridcolor='#f1f3f5',
-            linecolor='#dee2e6'
+            linecolor='#dee2e6',
+            showgrid=True
         ),
         yaxis=dict(
-            tickfont=dict(size=9, color='#6c757d'),
+            tickfont=dict(size=10, color='#6c757d'),
             gridcolor='#f1f3f5',
-            linecolor='#dee2e6'
+            linecolor='#dee2e6',
+            showgrid=True
         ),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
-        margin=dict(l=50, r=50, t=20, b=150)
+        margin=dict(l=60, r=50, t=30, b=150)
     )
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 elif chart_type == 'Heatmap':
-    # Heatmap
+    # Heatmap с улучшенной цветовой схемой
     pivot_data = filtered_df.groupby(['Employee', 'Project_No', 'Project_Label'])['Hours'].sum().reset_index()
     pivot_table = pivot_data.pivot_table(
         index='Employee', 
@@ -369,15 +468,15 @@ elif chart_type == 'Heatmap':
         z=pivot_table.values.tolist(),
         x=pivot_table.columns.tolist(),
         y=pivot_table.index.tolist(),
-        colorscale=[[0, '#f8f9fa'], [0.5, '#ced4da'], [1, '#495057']],
+        colorscale=[[0, '#f8f9fa'], [0.3, '#e3f2fd'], [0.6, '#4A90E2'], [1, '#1e5aa8']],
         text=[[f'{val:.0f}' if val > 0 else '' for val in row] for row in pivot_table.values],
         texttemplate='%{text}',
-        textfont=dict(size=8, color='white'),
+        textfont=dict(size=9, color='white'),
         hovertemplate='<b>Сотрудник:</b> %{y}<br><b>Проект:</b> %{x}<br><b>Часы:</b> %{z:,.0f}<extra></extra>',
         showscale=True,
         colorbar=dict(
             title="Часы",
-            titlefont=dict(size=9, color='#495057'),
+            titlefont=dict(size=10, color='#495057'),
             tickfont=dict(size=9, color='#495057')
         )
     ))
@@ -391,22 +490,22 @@ elif chart_type == 'Heatmap':
         xaxis=dict(
             side="bottom",
             tickangle=-45,
-            tickfont=dict(size=8, color='#6c757d'),
+            tickfont=dict(size=9, color='#6c757d'),
             gridcolor='#f1f3f5'
         ),
         yaxis=dict(
             autorange="reversed",
-            tickfont=dict(size=9, color='#6c757d'),
+            tickfont=dict(size=10, color='#6c757d'),
             gridcolor='#f1f3f5'
         ),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=150, r=50, t=20, b=200)
+        margin=dict(l=150, r=80, t=30, b=200)
     )
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 elif chart_type == 'Treemap':
-    # Treemap
+    # Treemap с улучшенной цветовой схемой
     treemap_data = filtered_df.groupby(['Client', 'Project_No', 'Project_Label', 'Employee'])['Hours'].sum().reset_index()
     
     fig = px.treemap(
@@ -415,28 +514,29 @@ elif chart_type == 'Treemap':
         values='Hours',
         title="",
         color='Hours',
-        color_continuous_scale='Greys',
+        color_continuous_scale='Blues',
         template='plotly_white'
     )
     
     fig.update_layout(
-        height=600,
+        height=650,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=20, r=20, t=20, b=20)
+        margin=dict(l=20, r=20, t=30, b=20)
     )
     
     fig.update_traces(
         hovertemplate='<b>%{label}</b><br>Часы: %{value:,.0f}<extra></extra>',
-        textfont=dict(size=10, color='white'),
+        textfont=dict(size=11, color='white'),
         textposition='middle center',
-        texttemplate='%{label}<br>%{value:,.0f} ч'
+        texttemplate='%{label}<br>%{value:,.0f} ч',
+        marker=dict(line=dict(color='white', width=2))
     )
     
     fig.update_coloraxes(
         colorbar=dict(
             title="Часы",
-            titlefont=dict(size=9, color='#495057'),
+            titlefont=dict(size=10, color='#495057'),
             tickfont=dict(size=9, color='#495057')
         )
     )
@@ -445,13 +545,17 @@ elif chart_type == 'Treemap':
 
 # Опциональные таблицы
 if show_tables:
-    st.divider()
-    st.markdown("### Дополнительная информация")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style='padding: 1rem 0;'>
+        <h2 style='color: #212529; font-size: 1.5rem; font-weight: 700; margin: 0;'>Дополнительная информация</h2>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("**Топ-10 проектов**")
+        st.markdown("**🏆 Топ-10 проектов**")
         top_projects = filtered_df.groupby(['Project_No', 'Project_Label'])['Hours'].sum().reset_index()
         top_projects = top_projects.sort_values('Hours', ascending=False).head(10)
         st.dataframe(
@@ -462,7 +566,7 @@ if show_tables:
         )
     
     with col2:
-        st.markdown("**Топ-10 сотрудников**")
+        st.markdown("**👥 Топ-10 сотрудников**")
         top_employees = filtered_df.groupby('Employee')['Hours'].sum().reset_index()
         top_employees = top_employees.sort_values('Hours', ascending=False).head(10)
         st.dataframe(
@@ -474,8 +578,12 @@ if show_tables:
 
 # Экспорт данных
 if export_data:
-    st.divider()
-    st.markdown("### Экспорт данных")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style='padding: 1rem 0;'>
+        <h2 style='color: #212529; font-size: 1.5rem; font-weight: 700; margin: 0;'>Экспорт данных</h2>
+    </div>
+    """, unsafe_allow_html=True)
     
     # CSV экспорт
     csv = filtered_df[['Employee', 'Project_No', 'Project_Label', 'Client', 'Activity', 'Hours']].to_csv(index=False).encode('utf-8-sig')
@@ -483,5 +591,6 @@ if export_data:
         label="📥 Скачать CSV",
         data=csv,
         file_name=f"kmga_data_{selected_project}_{selected_employee}.csv",
-        mime="text/csv"
+        mime="text/csv",
+        use_container_width=True
     )
