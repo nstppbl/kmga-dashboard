@@ -133,18 +133,36 @@ def load_data():
         'Project_Description'
     ])['Hours'].sum().reset_index()
     
-    # Создаем метки проектов
-    df_aggregated['Project_Label'] = df_aggregated['Client'] + ' - ' + df_aggregated['Project_No']
+    # Создаем метки проектов - более четкие с Client и Project_Description
+    df_aggregated['Project_Label'] = (
+        df_aggregated['Client'] + ' - ' + 
+        df_aggregated['Project_No'] + ' | ' + 
+        df_aggregated['Project_Description'].str[:60]
+    )
     df_aggregated['Project_Full_Label'] = (
         df_aggregated['Client'] + ' - ' + 
         df_aggregated['Project_No'] + '<br>' + 
-        df_aggregated['Project_Description'].str[:50]
+        df_aggregated['Project_Description']
     )
     
-    return df_aggregated
+    # Проверка на дубликаты (Employee + Project_No)
+    duplicates_check = df_aggregated.duplicated(subset=['Employee', 'Project_No'], keep=False)
+    duplicates_df = df_aggregated[duplicates_check].copy() if duplicates_check.any() else pd.DataFrame()
+    
+    return df_aggregated, duplicates_df
 
 # Загрузка данных
-df = load_data()
+df, duplicates_df = load_data()
+
+# Показываем дубликаты если они есть
+if not duplicates_df.empty:
+    with st.expander("⚠️ Найдены потенциальные дубликаты", expanded=False):
+        st.dataframe(
+            duplicates_df[['Employee', 'Project_No', 'Client', 'Project_Description', 'Hours']].sort_values(['Employee', 'Project_No']),
+            use_container_width=True,
+            hide_index=True
+        )
+        st.caption(f"Всего найдено {len(duplicates_df)} записей с дублирующимися комбинациями Employee + Project_No")
 
 # Красивый заголовок
 st.markdown("""
@@ -298,7 +316,7 @@ pie_colors = px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
 if chart_type == 'Bar Chart':
     # Stacked Bar Chart
     fig = go.Figure()
-    
+
     employees = sorted(filtered_df['Employee'].unique())
     for i, emp in enumerate(employees):
         emp_data = filtered_df[filtered_df['Employee'] == emp]
@@ -533,13 +551,15 @@ elif chart_type == 'Treemap':
         marker=dict(line=dict(color='white', width=2))
     )
     
-    fig.update_coloraxes(
-        colorbar=dict(
-            title="Часы",
-            titlefont=dict(size=10, color='#495057'),
-            tickfont=dict(size=9, color='#495057')
+    # Исправляем обновление colorbar для treemap
+    if hasattr(fig.layout, 'coloraxis'):
+        fig.update_layout(
+            coloraxis_colorbar=dict(
+                title="Часы",
+                titlefont=dict(size=10, color='#495057'),
+                tickfont=dict(size=9, color='#495057')
+            )
         )
-    )
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
