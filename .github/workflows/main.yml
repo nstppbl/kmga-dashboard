@@ -4,28 +4,4 @@ on:
     paths:
       - 'data.json'
       - 'script.py'
-  workflow_dispatch:
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Загружаем всю историю для корректной работы git
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: pip install pandas plotly
-      - name: Run script
-        run: python script.py
-      - name: Force Update Dashboard
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "action@github.com"
-          git add index.html
-          # Делаем "мягкий" коммит и принудительно затираем мастер
-          git commit --amend -m "Update Dashboard: $(date)" || git commit -m "Update Dashboard: $(date)"
-          git push origin master --force
+# workflow_dispatch мы убрали, чтобы n8n не запускал второй процесс через API
