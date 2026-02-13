@@ -1,8 +1,10 @@
 name: Update Dashboard
+
 on:
   push:
     paths:
-      - 'data.json' # Только один триггер!
+      - 'data.json'  # Автоматический запуск при изменении data.json
+  workflow_dispatch:  # Ручной запуск через API (для n8n)
 
 jobs:
   build:
@@ -12,14 +14,18 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
       - name: Install dependencies
         run: pip install pandas plotly
+
       - name: Run script
         run: python script.py
+
       - name: Force Update Dashboard
         run: |
           git config --global user.name "github-actions"
